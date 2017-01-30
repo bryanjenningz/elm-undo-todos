@@ -6,22 +6,43 @@ import Html.Attributes exposing (value)
 
 
 type alias State =
-    { todo : String, todos : List String }
+    { todo : String
+    , todos : List String
+    }
+
+
+type alias States =
+    { before : List State
+    , now : State
+    , after : List State
+    }
 
 
 type alias Model =
-    { todo : String, todos : List String, states : List State }
+    { todo : String
+    , todos : List String
+    , states : States
+    }
 
 
 type Msg
     = ChangeTodo String
     | AddTodo String
     | Undo
+    | Redo
 
 
 view model =
     div []
-        [ button [ onClick Undo ] [ text "Undo" ]
+        --[ div [] [ text (toString model) ]
+        [ if List.length model.states.before > 0 then
+            button [ onClick Undo ] [ text "Undo" ]
+          else
+            text ""
+        , if List.length model.states.after > 0 then
+            button [ onClick Redo ] [ text "Redo" ]
+          else
+            text ""
         , form
             [ onSubmit (AddTodo model.todo) ]
             [ input
@@ -37,45 +58,70 @@ todoView todo =
     div [] [ text todo ]
 
 
-update msg modelBefore =
-    let
-        states =
-            modelBefore.states ++ [ { todo = modelBefore.todo, todos = modelBefore.todos } ]
-
-        model =
-            { modelBefore | states = states }
-    in
-        case msg of
-            ChangeTodo todo ->
-                { model | todo = todo }
-
-            AddTodo todo ->
-                { model | todos = model.todos ++ [ todo ], todo = "" }
-
-            Undo ->
-                let
-                    lastState =
-                        modelBefore.states
-                            |> List.reverse
+update msg model =
+    case msg of
+        Undo ->
+            let
+                states =
+                    States
+                        (model.states.before
+                            |> List.tail
+                            |> Maybe.withDefault []
+                        )
+                        (model.states.before
                             |> List.head
                             |> Maybe.withDefault (State "" [])
+                        )
+                        (model.states.now :: model.states.after)
+            in
+                { model | todo = states.now.todo, todos = states.now.todos, states = states }
 
-                    lastStateRemoved =
-                        modelBefore.states
-                            |> List.reverse
+        Redo ->
+            let
+                states =
+                    States
+                        (model.states.now :: model.states.before)
+                        (model.states.after
+                            |> List.head
+                            |> Maybe.withDefault (State "" [])
+                        )
+                        (model.states.after
                             |> List.tail
-                            |> Maybe.withDefault [ State "" [] ]
-                            |> List.reverse
-                in
-                    { todo = lastState.todo
-                    , todos = lastState.todos
-                    , states = lastStateRemoved
-                    }
+                            |> Maybe.withDefault []
+                        )
+            in
+                { model | todo = states.now.todo, todos = states.now.todos, states = states }
+
+        ChangeTodo todo ->
+            let
+                model_ =
+                    { model | todo = todo }
+
+                states =
+                    States
+                        (model.states.now :: model.states.before)
+                        (State model_.todo model_.todos)
+                        []
+            in
+                { model_ | states = states }
+
+        AddTodo todo ->
+            let
+                model_ =
+                    { model | todo = "", todos = model.todos ++ [ todo ] }
+
+                states =
+                    States
+                        (model.states.now :: model.states.before)
+                        (State model_.todo model_.todos)
+                        []
+            in
+                { model_ | states = states }
 
 
 main =
     beginnerProgram
-        { model = Model "" [] []
+        { model = Model "" [] (States [] (State "" []) [])
         , view = view
         , update = update
         }
