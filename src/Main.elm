@@ -2,7 +2,7 @@ module Main exposing (..)
 
 import Html exposing (beginnerProgram, Html, div, text, form, input, button)
 import Html.Events exposing (onSubmit, onInput, onClick)
-import Html.Attributes exposing (value)
+import Html.Attributes exposing (value, class, style)
 
 
 type alias State =
@@ -34,30 +34,55 @@ type Msg
 
 view : Model -> Html Msg
 view model =
-    div []
-        --[ div [] [ text (toString model) ]
+    div [ class "col-sm-4 col-sm-offset-4" ]
         [ if List.length model.states.before > 0 then
-            button [ onClick Undo ] [ text "Undo" ]
+            div
+                [ class <|
+                    if List.length model.states.after > 0 then
+                        "col-xs-6"
+                    else
+                        "col-xs-12"
+                , style [ ( "padding", "0" ) ]
+                ]
+                [ button [ onClick Undo, class "btn btn-default form-control" ] [ text "Undo" ] ]
           else
             text ""
         , if List.length model.states.after > 0 then
-            button [ onClick Redo ] [ text "Redo" ]
+            div
+                [ class <|
+                    if List.length model.states.before > 0 then
+                        "col-xs-6"
+                    else
+                        "col-xs-12"
+                , style [ ( "padding", "0" ) ]
+                ]
+                [ button [ onClick Redo, class "btn btn-default form-control" ] [ text "Redo" ] ]
           else
             text ""
         , form
             [ onSubmit (AddTodo model.todo) ]
-            [ input
-                [ onInput ChangeTodo, value model.todo ]
-                []
-            , button [] [ text "Add" ]
+            [ div [ class "row", style [ ( "margin", "0" ) ] ]
+                [ div [ class "col-xs-10", style [ ( "padding", "0" ) ] ]
+                    [ input
+                        [ onInput ChangeTodo, value model.todo, class "form-control" ]
+                        []
+                    ]
+                , div [ class "col-xs-2", style [ ( "padding", "0" ) ] ]
+                    [ button [ class "btn btn-primary form-control" ] [ text "Add" ] ]
+                ]
             ]
-        , div [] <| List.map todoView model.todos
+        , todosView model.todos
         ]
 
 
-todoView : String -> Html Msg
-todoView todo =
-    div [] [ text todo ]
+todosView : List String -> Html Msg
+todosView todos =
+    div [ class "list-group" ] <|
+        List.map
+            (\todo ->
+                div [ class "list-group-item" ] [ text todo ]
+            )
+            todos
 
 
 update : Msg -> Model -> Model
