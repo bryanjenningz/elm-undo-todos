@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Html exposing (beginnerProgram, Html, div, text, form, input, button)
+import Html exposing (beginnerProgram, Html, div, text, form, input, button, span)
 import Html.Events exposing (onSubmit, onInput, onClick)
 import Html.Attributes exposing (value, class, style)
 
@@ -28,6 +28,7 @@ type alias Model =
 type Msg
     = ChangeTodo String
     | AddTodo String
+    | RemoveTodo Int
     | Undo
     | Redo
 
@@ -78,9 +79,12 @@ view model =
 todosView : List String -> Html Msg
 todosView todos =
     div [ class "list-group" ] <|
-        List.map
-            (\todo ->
-                div [ class "list-group-item" ] [ text todo ]
+        List.indexedMap
+            (\i todo ->
+                div [ class "list-group-item" ]
+                    [ text todo
+                    , span [ class "pull-right glyphicon glyphicon-remove", onClick (RemoveTodo i) ] []
+                    ]
             )
             todos
 
@@ -131,6 +135,19 @@ update msg model =
             let
                 newModel =
                     { model | todo = "", todos = model.todos ++ [ todo ] }
+            in
+                updateStates model newModel
+
+        RemoveTodo index ->
+            let
+                front =
+                    List.take index model.todos
+
+                back =
+                    List.drop (index + 1) model.todos
+
+                newModel =
+                    { model | todos = front ++ back }
             in
                 updateStates model newModel
 
