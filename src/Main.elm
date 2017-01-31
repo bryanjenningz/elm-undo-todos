@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Html exposing (beginnerProgram, div, text, form, input, button)
+import Html exposing (beginnerProgram, Html, div, text, form, input, button)
 import Html.Events exposing (onSubmit, onInput, onClick)
 import Html.Attributes exposing (value)
 
@@ -32,6 +32,7 @@ type Msg
     | Redo
 
 
+view : Model -> Html Msg
 view model =
     div []
         --[ div [] [ text (toString model) ]
@@ -54,10 +55,12 @@ view model =
         ]
 
 
+todoView : String -> Html Msg
 todoView todo =
     div [] [ text todo ]
 
 
+update : Msg -> Model -> Model
 update msg model =
     case msg of
         Undo ->
@@ -97,23 +100,29 @@ update msg model =
                 newModel =
                     { model | todo = todo }
             in
-                { newModel | states = updateStates model newModel }
+                updateStates model newModel
 
         AddTodo todo ->
             let
                 newModel =
                     { model | todo = "", todos = model.todos ++ [ todo ] }
             in
-                { newModel | states = updateStates model newModel }
+                updateStates model newModel
 
 
+updateStates : Model -> Model -> Model
 updateStates oldModel newModel =
-    States
-        (oldModel.states.now :: oldModel.states.before)
-        (State newModel.todo newModel.todos)
-        []
+    let
+        newStates =
+            States
+                (oldModel.states.now :: oldModel.states.before)
+                (State newModel.todo newModel.todos)
+                []
+    in
+        { newModel | states = newStates }
 
 
+main : Program Never Model Msg
 main =
     beginnerProgram
         { model = Model "" [] (States [] (State "" []) [])
