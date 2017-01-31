@@ -94,29 +94,24 @@ update msg model =
 
         ChangeTodo todo ->
             let
-                model_ =
+                newModel =
                     { model | todo = todo }
-
-                states =
-                    States
-                        (model.states.now :: model.states.before)
-                        (State model_.todo model_.todos)
-                        []
             in
-                { model_ | states = states }
+                { newModel | states = updateStates model newModel }
 
         AddTodo todo ->
             let
-                model_ =
+                newModel =
                     { model | todo = "", todos = model.todos ++ [ todo ] }
-
-                states =
-                    States
-                        (model.states.now :: model.states.before)
-                        (State model_.todo model_.todos)
-                        []
             in
-                { model_ | states = states }
+                { newModel | states = updateStates model newModel }
+
+
+updateStates oldModel newModel =
+    States
+        (oldModel.states.now :: oldModel.states.before)
+        (State newModel.todo newModel.todos)
+        []
 
 
 main =
