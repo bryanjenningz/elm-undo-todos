@@ -2,7 +2,9 @@ module Main exposing (..)
 
 import Html exposing (program, Html, div, text, form, input, button, span)
 import Html.Events exposing (onSubmit, onInput, onClick)
-import Html.Attributes exposing (value, class, style)
+import Html.Attributes exposing (value, class, style, id, autocomplete)
+import Dom
+import Task
 
 
 type alias State =
@@ -66,7 +68,7 @@ view model =
             [ div [ class "row", style [ ( "margin", "0" ) ] ]
                 [ div [ class "col-xs-10", style [ ( "padding", "0" ) ] ]
                     [ input
-                        [ onInput ChangeTodo, value model.todo, class "form-control" ]
+                        [ onInput ChangeTodo, value model.todo, class "form-control", id "input-box", autocomplete False ]
                         []
                     ]
                 , div [ class "col-xs-2", style [ ( "padding", "0" ) ] ]
@@ -140,7 +142,7 @@ update msg model =
                 newModel =
                     { model | todo = "", todos = model.todos ++ [ todo ] }
             in
-                updateStates model newModel ! []
+                ( updateStates model newModel, focusInputBox )
 
         RemoveTodo index ->
             let
@@ -168,15 +170,19 @@ updateStates oldModel newModel =
         { newModel | states = newStates }
 
 
+focusInputBox : Cmd Msg
+focusInputBox =
+    Task.attempt (always NoOp) (Dom.focus "input-box")
+
+
 subscriptions : Model -> Sub Msg
 subscriptions model =
     Sub.none
 
 
-main : Program Never Model Msg
 main =
     program
-        { init = Model "" [] (States [] (State "" []) []) ! []
+        { init = ( Model "" [] (States [] (State "" []) []), focusInputBox )
         , view = view
         , update = update
         , subscriptions = subscriptions
