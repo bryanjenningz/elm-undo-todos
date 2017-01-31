@@ -1,6 +1,6 @@
 module Main exposing (..)
 
-import Html exposing (beginnerProgram, Html, div, text, form, input, button, span)
+import Html exposing (program, Html, div, text, form, input, button, span)
 import Html.Events exposing (onSubmit, onInput, onClick)
 import Html.Attributes exposing (value, class, style)
 
@@ -26,7 +26,8 @@ type alias Model =
 
 
 type Msg
-    = ChangeTodo String
+    = NoOp
+    | ChangeTodo String
     | AddTodo String
     | RemoveTodo Int
     | Undo
@@ -89,9 +90,12 @@ todosView todos =
             todos
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
+        NoOp ->
+            model ! []
+
         Undo ->
             let
                 states =
@@ -106,7 +110,7 @@ update msg model =
                         )
                         (model.states.now :: model.states.after)
             in
-                { model | todo = states.now.todo, todos = states.now.todos, states = states }
+                { model | todo = states.now.todo, todos = states.now.todos, states = states } ! []
 
         Redo ->
             let
@@ -122,21 +126,21 @@ update msg model =
                             |> Maybe.withDefault []
                         )
             in
-                { model | todo = states.now.todo, todos = states.now.todos, states = states }
+                { model | todo = states.now.todo, todos = states.now.todos, states = states } ! []
 
         ChangeTodo todo ->
             let
                 newModel =
                     { model | todo = todo }
             in
-                updateStates model newModel
+                updateStates model newModel ! []
 
         AddTodo todo ->
             let
                 newModel =
                     { model | todo = "", todos = model.todos ++ [ todo ] }
             in
-                updateStates model newModel
+                updateStates model newModel ! []
 
         RemoveTodo index ->
             let
@@ -149,7 +153,7 @@ update msg model =
                 newModel =
                     { model | todos = front ++ back }
             in
-                updateStates model newModel
+                updateStates model newModel ! []
 
 
 updateStates : Model -> Model -> Model
@@ -164,10 +168,16 @@ updateStates oldModel newModel =
         { newModel | states = newStates }
 
 
+subscriptions : Model -> Sub Msg
+subscriptions model =
+    Sub.none
+
+
 main : Program Never Model Msg
 main =
-    beginnerProgram
-        { model = Model "" [] (States [] (State "" []) [])
+    program
+        { init = Model "" [] (States [] (State "" []) []) ! []
         , view = view
         , update = update
+        , subscriptions = subscriptions
         }
